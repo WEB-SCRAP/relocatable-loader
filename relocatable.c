@@ -1,54 +1,146 @@
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
-void main()
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+// Stores bitmask value
+char bitmask[4];
+// Stores the binary equivalent of the complete bitmask
+char binary_mask[13];
+
+// Finds corresponding binary equivalent of bitmask
+void convert_binary(char bitmask[4])
 {
-    FILE *f1,*fp2;
-    f1=fopen("object1.txt","r+");
-    fp2=fopen("output2.txt","r+");
-    char buffer[1000];
-    char b[10],c[10],d[10],e[10];
-    char a[10]="H";
-    char temp[100];
-    unsigned long temp1,temp2,temp3;
-    int i;
-    int len;
-    int j;
-    char z[10]="E";
-    printf("enter location:");
-    scanf("%d",&temp1);
-    printf("memory \t\t object codes");
-    fprintf(fp2, "Memory values  \t\t\t  contens");
-    printf("\n");
-    for(i=0;i<=5;i++)
+    strcpy(binary_mask, "");
+
+    for (int i = 0; i < strlen(bitmask); i++)
     {
-        fscanf(f1,"%s",buffer);
-        if(strcmp(buffer,a)== 0)
+        switch (bitmask[i])
         {
-            fscanf(f1,"%s %s %s",b,c,d);
+        case '0':
+            strcat(binary_mask, "0000");
+            break;
+        case '1':
+            strcat(binary_mask, "0001");
+            break;
+        case '2':
+            strcat(binary_mask, "0010");
+            break;
+        case '3':
+            strcat(binary_mask, "0011");
+            break;
+        case '4':
+            strcat(binary_mask, "0100");
+            break;
+        case '5':
+            strcat(binary_mask, "0101");
+            break;
+        case '6':
+            strcat(binary_mask, "0110");
+            break;
+        case '7':
+            strcat(binary_mask, "0111");
+            break;
+        case '8':
+            strcat(binary_mask, "1000");
+            break;
+        case '9':
+            strcat(binary_mask, "1001");
+            break;
+        case 'A':
+            strcat(binary_mask, "1010");
+            break;
+        case 'B':
+            strcat(binary_mask, "1011");
+            break;
+        case 'C':
+            strcat(binary_mask, "1100");
+            break;
+        case 'D':
+            strcat(binary_mask, "1101");
+            break;
+        case 'E':
+            strcat(binary_mask, "1110");
+            break;
+        case 'F':
+            strcat(binary_mask, "1111");
+            break;
         }
-
-        else
-        {
-            fscanf(f1,"%s %s",b,d);
-            temp2=strtoul(d, NULL, 16);
-            len=temp2/3;
-            printf("%d",temp1);
-            fprintf(fp2, "\n");
-            fprintf(fp2, "%d", temp1);
-            for(j=0;j<len;j++)
-            {
-                fscanf(f1,"%s",c);
-                printf("\t");
-                printf("%s",c);
-                fprintf(fp2, "\t%s", c);
-                printf("\t");
-            }
-            fprintf(fp2, "\n");
-            printf("\n");
-            temp1=temp1+len;
-        }
-
     }
 }
 
+void main()
+{
+    // Stores starting address to which program is to be relocated
+    int start;
+    // Stores the address of text record
+    int address;
+    // Stores opcode read from text record
+    int opcode;
+    // Stores the final address after relocati99on
+    int final_addr;
+    // Stores the length of the text record
+    int text_rec_len;
+    // Stores starting address of record
+    char rec_addr[6];
+    // Stores length of record
+    char length[10];
+    // Stores the first column of the record (H/T/E)
+    char col_one[10];
+    // Stores address present in object code
+    char obj_addr[10];
+    // Stores the program name read from the input file
+    char prog_name[10];
+
+    FILE *fp = fopen("reloc_input.txt", "r");
+
+    printf("Enter starting address : ");
+    scanf("%x", &start);
+    fscanf(fp, "%s", col_one);
+
+    printf("\nLocation\tObject Code");
+
+    while (strcmp(col_one, "E") != 0)
+    {
+        // For a header record, it reads the program label, starting address, ending address, and the next input string.
+        if (strcmp(col_one, "H") == 0)
+        {
+            fscanf(fp, "%s", prog_name);
+            fscanf(fp, "%x", &rec_addr);
+            fscanf(fp, "%x", &length);
+            fscanf(fp, "%s", col_one);
+        }
+        //  For a text record, it reads the starting address, length, and the input string.
+     
+        if (strcmp(col_one, "T") == 0)
+        {
+            fscanf(fp, "%x", &address);
+            fscanf(fp, "%x", &text_rec_len);
+            fscanf(fp, "%s", bitmask);
+
+            address += start;
+
+            convert_binary(bitmask);
+
+            for (int i = 0; i < 10; i++)
+            {
+                fscanf(fp, "%x", &opcode);
+                fscanf(fp, "%s", &obj_addr);
+
+                if (binary_mask[i] == '0')
+                    final_addr = (int)strtol(obj_addr, NULL, 16);
+                else
+                    final_addr = (int)strtol(obj_addr, NULL, 16) + start;
+
+                printf("\n%x\t\t%x%04x", address, opcode, final_addr);
+                address += 3;
+
+                if (obj_addr[strlen(obj_addr) - 1] == '$')
+                    break;
+            }
+
+            fscanf(fp, "%s", col_one);
+        }
+    }
+
+    fclose(fp);
+}
